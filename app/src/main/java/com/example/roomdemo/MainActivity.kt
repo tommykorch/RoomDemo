@@ -35,5 +35,6 @@ fun ScreenSetup(modifier: Modifier = Modifier) {
 }
 @Composable
 fun MainScreen(modifier: Modifier = Modifier) {
+
 }
 
