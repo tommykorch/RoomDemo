@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -26,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -37,6 +41,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Entity
 import com.example.roomdemo.ui.theme.RoomDemoTheme
 
@@ -44,6 +50,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             RoomDemoTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -61,9 +68,13 @@ fun ScreenSetup(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier) {
+fun MainScreen(modifier: Modifier = Modifier,
+               viewModel: ProductViewModel = viewModel()) {
+    val products by viewModel.allProducts.observeAsState(emptyList())
     var productName by rememberSaveable { mutableStateOf("") }
     var quantity by rememberSaveable { mutableStateOf("") }
+    val searchResults by viewModel.searchResults.observeAsState(emptyList())
+    val productsToDisplay = searchResults.ifEmpty { products }
 
     Column(
         modifier = modifier
@@ -101,7 +112,11 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 .padding(horizontal = 1.dp)
 
             Button(
-                onClick = {},
+                onClick = {
+                    viewModel.addProduct(productName, quantity.toIntOrNull() ?: 0)
+                    productName = ""
+                    quantity = ""
+                },
                 colors = buttonColors,
                 shape = RoundedCornerShape(20.dp),
                 modifier = buttonModifier
@@ -109,7 +124,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 Text("Add",fontSize = 13.sp)
             }
             Button(
-                onClick = {},
+                onClick = {viewModel.findProduct(productName)},
                 colors = buttonColors,
                 shape = RoundedCornerShape(20.dp),
                 modifier = buttonModifier
@@ -117,7 +132,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 Text("Search",fontSize = 13.sp)
             }
             Button(
-                onClick = {},
+                onClick = {viewModel.deleteProduct(productName)},
                 colors = buttonColors,
                 shape = RoundedCornerShape(20.dp),
                 modifier = buttonModifier
@@ -125,7 +140,10 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 Text("Delete",fontSize = 13.sp)
             }
             Button(
-                onClick = {},
+                onClick = {
+                    productName = ""
+                    quantity = ""
+                          },
                 colors = buttonColors,
                 shape = RoundedCornerShape(20.dp),
                 modifier = buttonModifier
@@ -135,7 +153,30 @@ fun MainScreen(modifier: Modifier = Modifier) {
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-
+        LazyColumn {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF6050DC))
+                        .padding(vertical = 4.dp)
+                ) {
+                    Text("ID", Modifier.weight(1f), color = Color.White)
+                    Text("Product", Modifier.weight(3f), color = Color.White)
+                    Text("Quantity", Modifier.weight(2f), color = Color.White)
+                }
+            }
+            items(productsToDisplay) { product ->
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                ) {
+                    Text(product.id.toString(), Modifier.weight(1f))
+                    Text(product.productName, Modifier.weight(3f))
+                    Text(product.quantity.toString(), Modifier.weight(2f))
+                }
+            }
+        }
 
     }
 }
